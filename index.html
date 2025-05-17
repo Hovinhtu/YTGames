@@ -44,6 +44,10 @@
   </style>
 </head>
 <body>
+  <input type="file" id="imagePicker" accept="image/*" style="margin-top:10px; color:#fff;">
+
+  <div class="answer" id="answer" style="display: block;">✅ Đáp án: 0.0s</div>
+
   <div class="controls">
     <label>Chế độ tốc độ:
       <select id="speedMode">
@@ -69,11 +73,10 @@
     </label>
     <button onclick="startGame()">Bắt đầu</button>
   </div>
-  <input type="file" id="imagePicker" accept="image/*" style="margin-top:10px; color:#fff;">
   <div class="timer" id="timer">🕒 Thời gian: 0.00s</div>
-  <div class="answer" id="answer"></div>
+  <div class="answer" id="answer">✅ Đáp án sẽ xuất hiện ở đây sau khi trò chơi kết thúc.</div>
   <canvas id="gameCanvas" width="360" height="640"></canvas>
-  <img id="logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iconic_image_logo.svg/120px-Iconic_image_logo.svg.png" style="position:absolute; bottom:10px; right:10px; width:60px; opacity:0.8; z-index:10;" alt="Logo">
+  
 
   <script>
     const canvas = document.getElementById("gameCanvas");
@@ -168,7 +171,7 @@ let matchTime = 0;
 
       startTime = null;
       answerLogged = false;
-      answerEl.style.display = "none";
+      // giữ nguyên trạng thái hiển thị để tránh thay đổi giao diện
 
       if (img.complete) {
         drawFrame(performance.now());
@@ -215,7 +218,6 @@ let matchTime = 0;
         console.log("✅ Đáp án đúng (miếng ghép khớp): " + matchTime + "s");
         setTimeout(() => {
           answerEl.textContent = `✅ Đáp án: ${matchTime}s`;
-          answerEl.style.display = 'block';
         }, 2000);
         answerLogged = true;
       }
