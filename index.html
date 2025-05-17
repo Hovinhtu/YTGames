@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Puzzle Snap Timer</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #fff;
+      font-family: sans-serif;
+    }
+    canvas {
+      border: 2px solid #fff;
+      background: #222;
+      margin-top: 10px;
+    }
+    .timer {
+      font-size: 24px;
+      margin-top: 10px;
+    }
+    .answer {
+      font-size: 20px;
+      color: #0f0;
+      display: none;
+      margin-top: 5px;
+    }
+    .controls {
+      margin-top: 10px;
+    }
+    button {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 16px;
+    }
+    input[type="number"] {
+      width: 60px;
+      margin-left: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <label>Chế độ tốc độ:
+      <select id="speedMode">
+        <option value="uniform">Đều</option>
+        <option value="variable">Biến thiên</option>
+      </select>
+    </label>
+    <label>Hình dạng:
+      <select id="shapeSelect">
+        <option value="square">Vuông</option>
+        <option value="circle">Tròn</option>
+        <option value="triangle">Tam giác</option>
+      </select>
+    </label>
+    <label>Hướng:
+      <select id="directionSelect">
+        <option value="horizontal">Ngang</option>
+        <option value="vertical">Dọc</option>
+      </select>
+    </label>
+    <label>Thời gian (s):
+      <input type="number" id="timeInput" min="1" max="30" value="5">
+    </label>
+    <button onclick="startGame()">Bắt đầu</button>
+  </div>
+  <input type="file" id="imagePicker" accept="image/*" style="margin-top:10px; color:#fff;">
+  <div class="timer" id="timer">🕒 Thời gian: 0.00s</div>
+  <div class="answer" id="answer"></div>
+  <canvas id="gameCanvas" width="360" height="640"></canvas>
+  <img id="logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Iconic_image_logo.svg/120px-Iconic_image_logo.svg.png" style="position:absolute; bottom:10px; right:10px; width:60px; opacity:0.8; z-index:10;" alt="Logo">
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const timerEl = document.getElementById("timer");
+    const answerEl = document.getElementById("answer");
+    const shapeSelect = document.getElementById("shapeSelect");
+    const directionSelect = document.getElementById("directionSelect");
+    const timeInput = document.getElementById("timeInput");
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = "https://picsum.photos/360/640";
+
+    const imagePicker = document.getElementById("imagePicker");
+    imagePicker.addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+          const tempImg = new Image();
+          tempImg.onload = function () {
+            // Tạo canvas trung gian để crop ảnh theo tỷ lệ 9:16
+            const tempCanvas = document.createElement('canvas');
+            const ctx2 = tempCanvas.getContext('2d');
+            const targetAspect = 9 / 16;
+            let sx = 0, sy = 0, sw = tempImg.width, sh = tempImg.height;
+            const imgAspect = tempImg.width / tempImg.height;
+            if (imgAspect > targetAspect) {
+              sw = tempImg.height * targetAspect;
+              sx = (tempImg.width - sw) / 2;
+            } else {
+              sh = tempImg.width / targetAspect;
+              sy = (tempImg.height - sh) / 2;
+            }
+            tempCanvas.width = 360;
+            tempCanvas.height = 640;
+            ctx2.drawImage(tempImg, sx, sy, sw, sh, 0, 0, 360, 640);
+            img.src = tempCanvas.toDataURL();
+          };
+          tempImg.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    const cutSize = 50;
+    let shape = "square";
+let direction = "horizontal";
+let cutX = 0;
+let cutY = 0;
+let pieceX = 0;
+let pieceY = 0;
+let moveSpeed = 1.5;
+let startTime = null;
+let lastTimestamp = null;
+let answerLogged = false;
+let matchTime = 0;
+
+    function drawShapeClip(ctx, shape, x, y, size) {
+      ctx.beginPath();
+      if (shape === "circle") {
+        ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+      } else if (shape === "triangle") {
+        ctx.moveTo(x + size / 2, y);
+        ctx.lineTo(x + size, y + size);
+        ctx.lineTo(x, y + size);
+        ctx.closePath();
+      } else {
+        ctx.rect(x, y, size, size);
+      }
+      ctx.clip();
+    }
+
+    function startGame() {
+      shape = shapeSelect.value;
+      direction = directionSelect.value;
+      const desiredTime = parseFloat(timeInput.value);
+
+      cutX = Math.floor(Math.random() * (canvas.width - cutSize));
+      cutY = Math.floor(Math.random() * (canvas.height - cutSize));
+
+      if (direction === "horizontal") {
+        pieceX = 0;
+        pieceY = cutY;
+        moveSpeed = (canvas.width - cutSize) / (desiredTime * 1000);
+      } else {
+        pieceY = 0;
+        pieceX = cutX;
+        moveSpeed = (canvas.height - cutSize) / (desiredTime * 1000);
+      }
+
+      startTime = null;
+      answerLogged = false;
+      answerEl.style.display = "none";
+
+      if (img.complete) {
+        drawFrame(performance.now());
+      } else {
+        img.onload = () => drawFrame(performance.now());
+      }
+    }
+
+    function drawFrame(timestamp) {
+      const speedMode = document.getElementById("speedMode").value;
+      if (!startTime) startTime = timestamp;
+      const delta = lastTimestamp ? timestamp - lastTimestamp : 16;
+  lastTimestamp = timestamp;
+  const elapsed = timestamp - startTime;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      ctx.save();
+      drawShapeClip(ctx, shape, cutX, cutY, cutSize);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.fillRect(cutX, cutY, cutSize, cutSize);
+      ctx.restore();
+
+      const pieceCanvas = document.createElement("canvas");
+      pieceCanvas.width = cutSize;
+      pieceCanvas.height = cutSize;
+      const pieceCtx = pieceCanvas.getContext("2d");
+
+      pieceCtx.save();
+      drawShapeClip(pieceCtx, shape, 0, 0, cutSize);
+      pieceCtx.drawImage(img, cutX, cutY, cutSize, cutSize, 0, 0, cutSize, cutSize);
+      pieceCtx.restore();
+
+      ctx.save();
+      drawShapeClip(ctx, shape, pieceX, pieceY, cutSize);
+      ctx.drawImage(pieceCanvas, pieceX, pieceY);
+      ctx.restore();
+
+      timerEl.textContent = `🕒 Thời gian: ${(elapsed / 1000).toFixed(1)}s`;
+
+      if (!answerLogged && Math.abs(pieceX - cutX) < moveSpeed * 16 && Math.abs(pieceY - cutY) < moveSpeed * 16) {
+        matchTime = (elapsed / 1000).toFixed(1);
+        console.log("✅ Đáp án đúng (miếng ghép khớp): " + matchTime + "s");
+        setTimeout(() => {
+          answerEl.textContent = `✅ Đáp án: ${matchTime}s`;
+          answerEl.style.display = 'block';
+        }, 2000);
+        answerLogged = true;
+      }
+
+      if ((direction === "horizontal" && pieceX <= canvas.width - cutSize) ||
+          (direction === "vertical" && pieceY <= canvas.height - cutSize)) {
+        if (direction === "horizontal") {
+          const progress = pieceX / (canvas.width - cutSize);
+          const curve = 0.5 + 0.5 * Math.sin(progress * Math.PI);
+          const adjustedSpeed = speedMode === "variable" ? moveSpeed * (curve / 0.6366) : moveSpeed;
+          pieceX += adjustedSpeed * delta;
+        }
+        else {
+          const progress = pieceY / (canvas.height - cutSize);
+          const curve = 0.5 + 0.5 * Math.sin(progress * Math.PI);
+          const adjustedSpeed = speedMode === "variable" ? moveSpeed * (curve / 0.6366) : moveSpeed;
+          pieceY += adjustedSpeed * delta;
+        }
+        requestAnimationFrame(drawFrame);
+      }
+    }
+  </script>
+</body>
+</html>
