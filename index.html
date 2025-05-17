@@ -208,7 +208,7 @@ let matchTime = 0;
 
       ctx.save();
       drawShapeClip(ctx, shape, pieceX, pieceY, cutSize);
-      ctx.drawImage(pieceCanvas, pieceX, pieceY);
+      ctx.drawImage(pieceCanvas, 0, 0, cutSize, cutSize, pieceX, pieceY, cutSize, cutSize);
       ctx.restore();
 
       timerEl.textContent = `🕒 Thời gian: ${(elapsed / 1000).toFixed(1)}s`;
