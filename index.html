@@ -48,7 +48,20 @@
 
   <div class="answer" id="answer" style="display: block;">✅ Answer: 0.0s</div>
 
-  <div class="controls">
+  $1
+    <label>Piece Size:
+      <select id="pieceSize">
+        <option value="large">Large</option>
+        <option value="medium">Medium</option>
+        <option value="small">Small</option>
+      </select>
+    </label>
+    <label>Shake Effect:
+      <select id="shakeMode">
+        <option value="off">Off</option>
+        <option value="on">On</option>
+      </select>
+    </label>
     <label>Speed Mode:
       <select id="speedMode">
         <option value="uniform">Uniform</option>
@@ -123,7 +136,7 @@
       }
     });
 
-    const cutSize = 50;
+    let cutSize = 50;
     let shape = "square";
 let direction = "horizontal";
 let cutX = 0;
@@ -152,6 +165,11 @@ let matchTime = 0;
     }
 
     function startGame() {
+      const pieceSize = document.getElementById("pieceSize").value;
+      if (pieceSize === "large") cutSize = 50;
+      else if (pieceSize === "medium") cutSize = 35;
+      else cutSize = 25;
+
       shape = shapeSelect.value;
       direction = directionSelect.value;
       const desiredTime = parseFloat(timeInput.value);
@@ -208,7 +226,12 @@ let matchTime = 0;
 
       ctx.save();
       drawShapeClip(ctx, shape, pieceX, pieceY, cutSize);
-      ctx.drawImage(pieceCanvas, 0, 0, cutSize, cutSize, pieceX, pieceY, cutSize, cutSize);
+      const shakeMode = document.getElementById("shakeMode").value;
+      let offsetY = 0;
+      if (shakeMode === "on") {
+        offsetY = 3 * Math.sin(elapsed / 100);
+      }
+      ctx.drawImage(pieceCanvas, 0, 0, cutSize, cutSize, pieceX, pieceY + offsetY, cutSize, cutSize);
       ctx.restore();
 
       ctx.fillStyle = "white";
