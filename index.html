@@ -15,7 +15,7 @@
       font-family: sans-serif;
     }
     canvas {
-      border: 2px solid #fff;
+      border: 2px solid #000;
       background: #222;
       margin-top: 10px;
     }
@@ -46,35 +46,35 @@
 <body>
   <input type="file" id="imagePicker" accept="image/*" style="margin-top:10px; color:#fff;">
 
-  <div class="answer" id="answer" style="display: block;">✅ Đáp án: 0.0s</div>
+  <div class="answer" id="answer" style="display: block;">✅ Answer: 0.0s</div>
 
   <div class="controls">
-    <label>Chế độ tốc độ:
+    <label>Speed Mode:
       <select id="speedMode">
-        <option value="uniform">Đều</option>
-        <option value="variable">Biến thiên</option>
+        <option value="uniform">Uniform</option>
+        <option value="variable">Variable</option>
       </select>
     </label>
-    <label>Hình dạng:
+    <label>Shape:
       <select id="shapeSelect">
-        <option value="square">Vuông</option>
-        <option value="circle">Tròn</option>
-        <option value="triangle">Tam giác</option>
+        <option value="square">Square</option>
+        <option value="circle">Circle</option>
+        <option value="triangle">Triangle</option>
       </select>
     </label>
-    <label>Hướng:
+    <label>Direction:
       <select id="directionSelect">
-        <option value="horizontal">Ngang</option>
-        <option value="vertical">Dọc</option>
+        <option value="horizontal">Horizontal</option>
+        <option value="vertical">Vertical</option>
       </select>
     </label>
-    <label>Thời gian (s):
+    <label>Time (s):
       <input type="number" id="timeInput" min="1" max="30" value="5">
     </label>
-    <button onclick="startGame()">Bắt đầu</button>
+    <button onclick="startGame()">Start</button>
   </div>
-  <div class="timer" id="timer">🕒 Thời gian: 0.00s</div>
-  <div class="answer" id="answer">✅ Đáp án sẽ xuất hiện ở đây sau khi trò chơi kết thúc.</div>
+  
+  
   <canvas id="gameCanvas" width="360" height="640"></canvas>
   
 
@@ -211,7 +211,9 @@ let matchTime = 0;
       ctx.drawImage(pieceCanvas, 0, 0, cutSize, cutSize, pieceX, pieceY, cutSize, cutSize);
       ctx.restore();
 
-      timerEl.textContent = `🕒 Thời gian: ${(elapsed / 1000).toFixed(1)}s`;
+      ctx.fillStyle = "white";
+      ctx.font = "24px sans-serif";
+      ctx.fillText(`⏱ ${(elapsed / 1000).toFixed(1)}s`, 10, 30);
 
       if (!answerLogged && Math.abs(pieceX - cutX) < moveSpeed * 16 && Math.abs(pieceY - cutY) < moveSpeed * 16) {
         matchTime = (elapsed / 1000).toFixed(1);
