@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Puzzle Snap Timer</title>
+  <title>Puzzle Snap Timer - HD</title>
   <style>
     body {
       margin: 0;
@@ -15,6 +15,8 @@
       font-family: sans-serif;
     }
     canvas {
+      width: 360px;
+      height: 640px;
       border: 2px solid #000;
       background: #222;
       margin-top: 10px;
@@ -58,7 +60,7 @@
 <body>
   <input type="file" id="imagePicker" accept="image/*">
 
-  <div class="answer" id="answer" style="display: block;">✅ Answer: 0.0s</div>
+  <div class="answer" id="answer" style="display: block;">✅ Answer: 0.00s</div>
 
   <div class="options">
     <label>Piece Size:
@@ -102,11 +104,20 @@
     <button onclick="startGame()">Start</button>
   </div>
 
-  <canvas id="gameCanvas" width="360" height="640"></canvas>
+  <canvas id="gameCanvas"></canvas>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
+
+    // Hiển thị HD retina
+    const displayWidth = 360;
+    const displayHeight = 640;
+    const scale = 2;
+    canvas.width = displayWidth * scale;
+    canvas.height = displayHeight * scale;
+    ctx.scale(scale, scale);
+
     const answerEl = document.getElementById("answer");
     const shapeSelect = document.getElementById("shapeSelect");
     const directionSelect = document.getElementById("directionSelect");
@@ -114,7 +125,7 @@
 
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.src = "https://picsum.photos/360/640";
+    img.src = "https://picsum.photos/720/1280"; // ảnh chất lượng cao hơn
 
     const imagePicker = document.getElementById("imagePicker");
     imagePicker.addEventListener("change", function (e) {
@@ -136,9 +147,9 @@
               sh = tempImg.width / targetAspect;
               sy = (tempImg.height - sh) / 2;
             }
-            tempCanvas.width = 360;
-            tempCanvas.height = 640;
-            ctx2.drawImage(tempImg, sx, sy, sw, sh, 0, 0, 360, 640);
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            ctx2.drawImage(tempImg, sx, sy, sw, sh, 0, 0, tempCanvas.width, tempCanvas.height);
             img.src = tempCanvas.toDataURL();
           };
           tempImg.src = evt.target.result;
@@ -183,17 +194,17 @@
       direction = directionSelect.value;
       const desiredTime = parseFloat(timeInput.value);
 
-      cutX = Math.floor(Math.random() * (canvas.width - cutSize));
-      cutY = Math.floor(Math.random() * (canvas.height - cutSize));
+      cutX = Math.floor(Math.random() * (displayWidth - cutSize));
+      cutY = Math.floor(Math.random() * (displayHeight - cutSize));
 
       if (direction === "horizontal") {
         pieceX = 0;
         pieceY = cutY;
-        moveSpeed = (canvas.width - cutSize) / (desiredTime * 1000);
+        moveSpeed = (displayWidth - cutSize) / (desiredTime * 1000);
       } else {
         pieceY = 0;
         pieceX = cutX;
-        moveSpeed = (canvas.height - cutSize) / (desiredTime * 1000);
+        moveSpeed = (displayHeight - cutSize) / (desiredTime * 1000);
       }
 
       startTime = null;
@@ -212,9 +223,10 @@
       const delta = lastTimestamp ? timestamp - lastTimestamp : 16;
       lastTimestamp = timestamp;
       const elapsed = timestamp - startTime;
+      const currentTime = (elapsed / 1000).toFixed(2);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
+      ctx.clearRect(0, 0, displayWidth, displayHeight);
+      ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
 
       ctx.save();
       drawShapeClip(ctx, shape, cutX, cutY, cutSize);
@@ -241,19 +253,19 @@
 
       ctx.fillStyle = "white";
       ctx.font = "24px sans-serif";
-      ctx.fillText(`⏱ ${(elapsed / 1000).toFixed(1)}s`, 10, 30);
+      ctx.fillText(`⏱ ${currentTime}s`, 10, 30);
 
       if (!answerLogged && Math.abs(pieceX - cutX) < moveSpeed * 16 && Math.abs(pieceY - cutY) < moveSpeed * 16) {
-        matchTime = (elapsed / 1000).toFixed(1);
+        matchTime = currentTime;
         setTimeout(() => {
           answerEl.textContent = `✅ Đáp án: ${matchTime}s`;
         }, 2000);
         answerLogged = true;
       }
 
-      if ((direction === "horizontal" && pieceX <= canvas.width - cutSize) ||
-          (direction === "vertical" && pieceY <= canvas.height - cutSize)) {
-        const progress = direction === "horizontal" ? pieceX / (canvas.width - cutSize) : pieceY / (canvas.height - cutSize);
+      if ((direction === "horizontal" && pieceX <= displayWidth - cutSize) ||
+          (direction === "vertical" && pieceY <= displayHeight - cutSize)) {
+        const progress = direction === "horizontal" ? pieceX / (displayWidth - cutSize) : pieceY / (displayHeight - cutSize);
         const curve = 0.5 + 0.5 * Math.sin(progress * Math.PI);
         const adjustedSpeed = speedMode === "variable" ? moveSpeed * (curve / 0.6366) : moveSpeed;
         if (direction === "horizontal") pieceX += adjustedSpeed * delta;
