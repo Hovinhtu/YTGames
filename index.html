@@ -19,15 +19,22 @@
       background: #222;
       margin-top: 10px;
     }
-    .timer {
-      font-size: 24px;
-      margin-top: 10px;
-    }
     .answer {
       font-size: 20px;
       color: #0f0;
-      display: none;
-      margin-top: 5px;
+      margin-top: 10px;
+    }
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    .options label {
+      display: flex;
+      flex-direction: column;
+      font-size: 14px;
     }
     .controls {
       margin-top: 10px;
@@ -37,18 +44,23 @@
       padding: 6px 12px;
       font-size: 16px;
     }
-    input[type="number"] {
-      width: 60px;
-      margin-left: 5px;
+    input[type="number"], select {
+      padding: 4px;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+    #imagePicker {
+      margin-top: 10px;
+      color: #fff;
     }
   </style>
 </head>
 <body>
-  <input type="file" id="imagePicker" accept="image/*" style="margin-top:10px; color:#fff;">
+  <input type="file" id="imagePicker" accept="image/*">
 
   <div class="answer" id="answer" style="display: block;">✅ Answer: 0.0s</div>
 
-  $1
+  <div class="options">
     <label>Piece Size:
       <select id="pieceSize">
         <option value="large">Large</option>
@@ -84,17 +96,17 @@
     <label>Time (s):
       <input type="number" id="timeInput" min="1" max="30" value="5">
     </label>
+  </div>
+
+  <div class="controls">
     <button onclick="startGame()">Start</button>
   </div>
-  
-  
+
   <canvas id="gameCanvas" width="360" height="640"></canvas>
-  
 
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    const timerEl = document.getElementById("timer");
     const answerEl = document.getElementById("answer");
     const shapeSelect = document.getElementById("shapeSelect");
     const directionSelect = document.getElementById("directionSelect");
@@ -112,7 +124,6 @@
         reader.onload = function (evt) {
           const tempImg = new Image();
           tempImg.onload = function () {
-            // Tạo canvas trung gian để crop ảnh theo tỷ lệ 9:16
             const tempCanvas = document.createElement('canvas');
             const ctx2 = tempCanvas.getContext('2d');
             const targetAspect = 9 / 16;
@@ -138,16 +149,16 @@
 
     let cutSize = 50;
     let shape = "square";
-let direction = "horizontal";
-let cutX = 0;
-let cutY = 0;
-let pieceX = 0;
-let pieceY = 0;
-let moveSpeed = 1.5;
-let startTime = null;
-let lastTimestamp = null;
-let answerLogged = false;
-let matchTime = 0;
+    let direction = "horizontal";
+    let cutX = 0;
+    let cutY = 0;
+    let pieceX = 0;
+    let pieceY = 0;
+    let moveSpeed = 1.5;
+    let startTime = null;
+    let lastTimestamp = null;
+    let answerLogged = false;
+    let matchTime = 0;
 
     function drawShapeClip(ctx, shape, x, y, size) {
       ctx.beginPath();
@@ -166,9 +177,7 @@ let matchTime = 0;
 
     function startGame() {
       const pieceSize = document.getElementById("pieceSize").value;
-      if (pieceSize === "large") cutSize = 50;
-      else if (pieceSize === "medium") cutSize = 35;
-      else cutSize = 25;
+      cutSize = pieceSize === "large" ? 50 : pieceSize === "medium" ? 35 : 25;
 
       shape = shapeSelect.value;
       direction = directionSelect.value;
@@ -189,7 +198,6 @@ let matchTime = 0;
 
       startTime = null;
       answerLogged = false;
-      // giữ nguyên trạng thái hiển thị để tránh thay đổi giao diện
 
       if (img.complete) {
         drawFrame(performance.now());
@@ -202,8 +210,8 @@ let matchTime = 0;
       const speedMode = document.getElementById("speedMode").value;
       if (!startTime) startTime = timestamp;
       const delta = lastTimestamp ? timestamp - lastTimestamp : 16;
-  lastTimestamp = timestamp;
-  const elapsed = timestamp - startTime;
+      lastTimestamp = timestamp;
+      const elapsed = timestamp - startTime;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
@@ -227,10 +235,7 @@ let matchTime = 0;
       ctx.save();
       drawShapeClip(ctx, shape, pieceX, pieceY, cutSize);
       const shakeMode = document.getElementById("shakeMode").value;
-      let offsetY = 0;
-      if (shakeMode === "on") {
-        offsetY = 3 * Math.sin(elapsed / 100);
-      }
+      let offsetY = shakeMode === "on" ? 3 * Math.sin(elapsed / 100) : 0;
       ctx.drawImage(pieceCanvas, 0, 0, cutSize, cutSize, pieceX, pieceY + offsetY, cutSize, cutSize);
       ctx.restore();
 
@@ -240,7 +245,6 @@ let matchTime = 0;
 
       if (!answerLogged && Math.abs(pieceX - cutX) < moveSpeed * 16 && Math.abs(pieceY - cutY) < moveSpeed * 16) {
         matchTime = (elapsed / 1000).toFixed(1);
-        console.log("✅ Đáp án đúng (miếng ghép khớp): " + matchTime + "s");
         setTimeout(() => {
           answerEl.textContent = `✅ Đáp án: ${matchTime}s`;
         }, 2000);
@@ -249,18 +253,11 @@ let matchTime = 0;
 
       if ((direction === "horizontal" && pieceX <= canvas.width - cutSize) ||
           (direction === "vertical" && pieceY <= canvas.height - cutSize)) {
-        if (direction === "horizontal") {
-          const progress = pieceX / (canvas.width - cutSize);
-          const curve = 0.5 + 0.5 * Math.sin(progress * Math.PI);
-          const adjustedSpeed = speedMode === "variable" ? moveSpeed * (curve / 0.6366) : moveSpeed;
-          pieceX += adjustedSpeed * delta;
-        }
-        else {
-          const progress = pieceY / (canvas.height - cutSize);
-          const curve = 0.5 + 0.5 * Math.sin(progress * Math.PI);
-          const adjustedSpeed = speedMode === "variable" ? moveSpeed * (curve / 0.6366) : moveSpeed;
-          pieceY += adjustedSpeed * delta;
-        }
+        const progress = direction === "horizontal" ? pieceX / (canvas.width - cutSize) : pieceY / (canvas.height - cutSize);
+        const curve = 0.5 + 0.5 * Math.sin(progress * Math.PI);
+        const adjustedSpeed = speedMode === "variable" ? moveSpeed * (curve / 0.6366) : moveSpeed;
+        if (direction === "horizontal") pieceX += adjustedSpeed * delta;
+        else pieceY += adjustedSpeed * delta;
         requestAnimationFrame(drawFrame);
       }
     }
