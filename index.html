@@ -59,7 +59,6 @@
 </head>
 <body>
   <input type="file" id="imagePicker" accept="image/*">
-
   <div class="answer" id="answer" style="display: block;">✅ Answer: 0.00s</div>
 
   <div class="options">
@@ -110,7 +109,6 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Hiển thị HD retina
     const displayWidth = 360;
     const displayHeight = 640;
     const scale = 2;
@@ -125,7 +123,7 @@
 
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.src = "https://picsum.photos/720/1280"; // ảnh chất lượng cao hơn
+    img.src = "https://picsum.photos/720/1280";
 
     const imagePicker = document.getElementById("imagePicker");
     imagePicker.addEventListener("change", function (e) {
@@ -226,7 +224,7 @@
       const currentTime = (elapsed / 1000).toFixed(2);
 
       ctx.clearRect(0, 0, displayWidth, displayHeight);
-      ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
+      ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, displayWidth, displayHeight);
 
       ctx.save();
       drawShapeClip(ctx, shape, cutX, cutY, cutSize);
@@ -241,7 +239,17 @@
 
       pieceCtx.save();
       drawShapeClip(pieceCtx, shape, 0, 0, cutSize);
-      pieceCtx.drawImage(img, cutX, cutY, cutSize, cutSize, 0, 0, cutSize, cutSize);
+      pieceCtx.drawImage(
+        img,
+        cutX * scale,
+        cutY * scale,
+        cutSize * scale,
+        cutSize * scale,
+        0,
+        0,
+        cutSize,
+        cutSize
+      );
       pieceCtx.restore();
 
       ctx.save();
